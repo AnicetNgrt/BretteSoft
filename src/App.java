@@ -1,6 +1,8 @@
+import java.io.IOException;
 import java.time.LocalDate;
 
 import MediathequeLogic.*;
+import Serveur.Serveur;
 import Services.ServiceEmprunt;
 import Services.ServiceReservation;
 import Services.ServiceRetour;
@@ -28,5 +30,18 @@ public class App {
 		ServiceEmprunt serviceEmpruntModele = new ServiceEmprunt(null);
 		ServiceReservation serviceReservationModele = new ServiceReservation(null);
 		ServiceRetour serviceRetourModele = new ServiceRetour(null);
+		
+		try {
+			Serveur serveurReservation = new Serveur(3000, serviceReservationModele);
+			Serveur serveurEmprunt = new Serveur(4000, serviceEmpruntModele);
+			Serveur serveurRetour = new Serveur(5000, serviceRetourModele);
+			
+			new Thread(serveurReservation).start();
+			new Thread(serveurEmprunt).start();
+			new Thread(serveurRetour).start();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
