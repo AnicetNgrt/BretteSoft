@@ -1,3 +1,4 @@
+package AppServeur;
 import java.io.IOException;
 import java.time.LocalDate;
 
@@ -9,7 +10,7 @@ import Services.ServiceRetour;
 
 public class App {
 	
-	private Document[] documents = new Document[] {
+	private static Document[] documents = new Document[] {
 		new DVD("Le vent se lève", false),
 		new DVD("The Shining", true),
 		new Livre("Chroniques de l'oiseau à ressort"),
@@ -20,13 +21,22 @@ public class App {
 		new CD("Async")
 	};
 	
-	private Abonne[] abonnes = new Abonne[] {
+	private static Abonne[] abonnes = new Abonne[] {
 		new Abonne(LocalDate.parse("2015-12-22")),
-		new Abonne(LocalDate.parse("2001-23-07")),
+		new Abonne(LocalDate.parse("2001-06-07")),
 		new Abonne(LocalDate.parse("1935-08-02")),
 	};
 	
 	public static void main(String[] args) {
+		
+		for(Document d:documents) {
+			MediathequeSharedDB.ajouterDocument(d);
+		}
+		
+		for(Abonne a:abonnes) {
+			MediathequeSharedDB.ajouterAbonne(a);
+		}
+		
 		ServiceEmprunt serviceEmpruntModele = new ServiceEmprunt(null);
 		ServiceReservation serviceReservationModele = new ServiceReservation(null);
 		ServiceRetour serviceRetourModele = new ServiceRetour(null);

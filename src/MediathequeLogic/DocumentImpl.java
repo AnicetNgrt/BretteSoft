@@ -15,6 +15,7 @@ public abstract class DocumentImpl implements Document {
 	
 	public DocumentImpl(String titre) {
 		this.numero = DocumentImpl.numeroMin++;
+		this.titre = titre;
 		this.reserve = null;
 		this.enMediatheque = true;
 	}
@@ -77,12 +78,15 @@ public abstract class DocumentImpl implements Document {
 	@Override
 	public synchronized void empruntPar(Abonne ab) throws EmpruntException {
 		if(!estDisponible()) {
-			String message = "Document indispible";
-			if(this.reserve != null && this.reserve != ab) {
+			String message = "Document indisponible";
+			if(this.reserve != ab) {
 				message = "Document reservé jusqu'à "+heureFinReservation()+".";
 			} else if(!this.enMediatheque) {
 				message = "Document déjà emprunté.";
 			}
+			throw new EmpruntException(message);
+		} else if(this.reserve == null) {
+			String message = "Vous n'avez pas encore reservé ce document, mais il semble disponible.";
 			throw new EmpruntException(message);
 		}
 		
@@ -90,7 +94,7 @@ public abstract class DocumentImpl implements Document {
 		this.enMediatheque = false;
 	}
 	
-	public boolean estDisponible() {
+	private boolean estDisponible() {
 		return this.reserve == null && this.enMediatheque;
 	}
 
@@ -102,4 +106,7 @@ public abstract class DocumentImpl implements Document {
 		this.enMediatheque = true;
 	}
 	
+	public String toString() {
+		return titre;
+	}
 }
