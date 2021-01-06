@@ -5,7 +5,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 // Observable du grand pattern observer apache et thread safe
 public abstract class Augure implements Apache {
 	
-	private LinkedBlockingQueue<Chaman> êtresSensiblesAuxSignaux;
+	private LinkedBlockingQueue<Chaman> êtresSensiblesAuxSignaux = new LinkedBlockingQueue<Chaman>();
 	
 	public void gagnerAdepte(Chaman être) {
 		êtresSensiblesAuxSignaux.add(être);
@@ -18,7 +18,7 @@ public abstract class Augure implements Apache {
 	protected void envoyerSignal(String message) {
 		LinkedBlockingQueue<Chaman> êtresCopiés = new LinkedBlockingQueue<Chaman>(êtresSensiblesAuxSignaux);
 		for(Chaman être: êtresCopiés) {
-			être.quandUnSignalSeDévoile(message);
+			être.quandUnSignalSeDévoile(this, message);
 		}
 	}
 	

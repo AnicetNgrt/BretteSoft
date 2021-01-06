@@ -1,6 +1,5 @@
 package MediathequeLogic;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
 
@@ -9,7 +8,6 @@ public class Abonne {
 	
 	private int numero;
 	private LocalDate dateDeNaissance;
-	private String email;
 	
 	public Abonne(LocalDate dateDeNaissance) {
 		this.dateDeNaissance = dateDeNaissance;

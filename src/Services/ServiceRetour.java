@@ -1,13 +1,9 @@
 package Services;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.Socket;
 
-import MediathequeLogic.Abonne;
 import MediathequeLogic.Document;
-import MediathequeLogic.MediathequeSharedDB;
 import Serveur.Service;
 
 public class ServiceRetour extends MediathequeService {
@@ -24,7 +20,6 @@ public class ServiceRetour extends MediathequeService {
 	
 	@Override
 	public void onConnection() throws IOException {
-		String listeDocuments = "	"+MediathequeSharedDB.listeDocuments().replace("\n", "\\n	");
 		String message = "Bienvenue au service de retour.\\n";
 		message += "\\nInstructions: <identifiant document à retourner>";
 		sendMessageToClient(message);
@@ -43,6 +38,7 @@ public class ServiceRetour extends MediathequeService {
 		
 		document.retour();
 		sendMessageToClient("Document "+document.toString()+" retourné avec succès.");
+		log("Document \""+document.toString()+"\" rendu.");
 	}
 
 	@Override

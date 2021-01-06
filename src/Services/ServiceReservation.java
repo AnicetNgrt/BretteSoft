@@ -1,23 +1,25 @@
 package Services;
 
-import java.io.DataOutputStream;
+
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 import MediathequeLogic.Abonne;
 import MediathequeLogic.Document;
-import MediathequeLogic.EmpruntException;
 import MediathequeLogic.MediathequeSharedDB;
 import MediathequeLogic.ReservationException;
 import Serveur.Service;
+import SignauxFuméeApaches.Augure;
+import SignauxFuméeApaches.Chaman;
 
-public class ServiceReservation extends MediathequeService {
+public class ServiceReservation extends MediathequeService implements Chaman {
 	
 	public static final boolean IS_SECURED = true;
 	
 	private static int cpt = 1;
     private final int numero;
+    
+    private Abonne abonneReserverBientot = null;
 	
 	public ServiceReservation(Socket socket) {
 		super(socket, IS_SECURED);
@@ -43,15 +45,29 @@ public class ServiceReservation extends MediathequeService {
 			abonne = result.abonne();
 			document = result.document();
 		} catch (MediathequeCommandParsingException e) {
-			sendMessageToClient(e.getMessage());
+			String errorMessage = e.getMessage();
+			sendMessageToClient(errorMessage);
 			return;
 		}
 		
+		essayerReservation(document, abonne);
+	}
+	
+	private void essayerReservation(Document document, Abonne abonne) throws IOException {
 		try {
 			document.reservationPour(abonne);
 			sendMessageToClient("Vous avez bien réservé le document "+document.toString()+".");
+			log("Document \""+document.toString()+"\" reservé par l'abonné n°"+abonne.numero()+".");
 		} catch (ReservationException e) {
-			sendMessageToClient(e.getMessage());
+			if(e.getMessage().startsWith("30s") && document instanceof Augure) {
+				((Augure)document).gagnerAdepte(this);
+				abonneReserverBientot = abonne;
+			}
+			if(!(document instanceof Augure)) {
+				sendMessageToClient("Ce document est réservé, mais pour pas très longtemps.");
+			} else {
+				sendMessageToClient(e.getMessage());
+			}
 		}
 	}
 
@@ -65,4 +81,31 @@ public class ServiceReservation extends MediathequeService {
 		return new ServiceReservation(socket);
 	}
 
+	@Override
+	public String nomAmérindien() {
+		return "Petit Nuage";
+	}
+
+	@Override
+	public void quandUnSignalSeDévoile(Augure augure, String message) {
+		if(augure instanceof Document) {
+			Document document = (Document) augure;
+			if(message.startsWith("FIN_RESERVATION")) {
+				try {
+					augure.perdreAdepte(this);
+					essayerReservation(document, abonneReserverBientot);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				abonneReserverBientot = null;
+			} else if(message.startsWith("EMPRUNTE")) {
+				try {
+					augure.perdreAdepte(this);
+					sendMessageToClient("Le document "+document.toString()+" vient tout juste d'être emprunté ! Dommage...");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }

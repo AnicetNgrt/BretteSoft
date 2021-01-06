@@ -1,13 +1,12 @@
 package Services;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+
 import java.net.Socket;
 
 import MediathequeLogic.Abonne;
 import MediathequeLogic.Document;
 import MediathequeLogic.EmpruntException;
-import MediathequeLogic.MediathequeSharedDB;
 import Serveur.Service;
 
 public class ServiceEmprunt extends MediathequeService {
@@ -24,7 +23,6 @@ public class ServiceEmprunt extends MediathequeService {
 	
 	@Override
 	public void onConnection() throws IOException {
-		String listeDocuments = "	"+MediathequeSharedDB.listeDocuments().replace("\n", "\\n	");
 		String message = "Bienvenue au service d'emprunt.\\n";
 		message += "\\nInstructions: <numéro abonné> <identifiant document à emprunter>";
 		sendMessageToClient(message);
@@ -46,6 +44,7 @@ public class ServiceEmprunt extends MediathequeService {
 		try {
 			document.empruntPar(abonne);
 			sendMessageToClient("Vous avez bien emprunté le document "+document.toString()+".");
+			log("Document \""+document.toString()+"\" emprunté par l'abonné n°"+abonne.numero()+".");
 		} catch (EmpruntException e) {
 			sendMessageToClient(e.getMessage());
 		}

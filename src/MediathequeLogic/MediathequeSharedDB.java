@@ -1,7 +1,5 @@
 package MediathequeLogic;
 
-import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MediathequeSharedDB {

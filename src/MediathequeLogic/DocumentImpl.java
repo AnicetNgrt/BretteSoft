@@ -1,9 +1,11 @@
 package MediathequeLogic;
 
-import ThreadUtils.RunnableStoppable;
 import java.time.LocalDateTime;
 
-public abstract class DocumentImpl implements Document {
+import SignauxFuméeApaches.Augure;
+import SignauxFuméeApaches.Chaman;
+
+public abstract class DocumentImpl extends Augure implements Document, Chaman {
 	
 	public static final long TEMPS_MAX_RESERV = 35 * 1000; //3600 * 2 * 1000; 
 	public static final long TEMPS_RESERV_FAIBLE = 30 * 1000; 
@@ -13,7 +15,7 @@ public abstract class DocumentImpl implements Document {
 	private String titre;
 	private long tsReservationMs;
 	private Abonne reserve;
-	private RunnableStoppable verificateurFinReservation = null;
+	private VerificateurFinReservation verificateur = null;
 	private boolean enMediatheque;
 	
 	public DocumentImpl(String titre) {
@@ -35,6 +37,7 @@ public abstract class DocumentImpl implements Document {
 			if(this.reserve != null) {
 				if(tempsRestantReservMs() < TEMPS_RESERV_FAIBLE) {
 					message = "30s";
+					throw new ReservationException(message);
 				} else {
 					message = "Document reservé jusqu'à "+heureFinReservation()+".";
 				}
@@ -51,37 +54,23 @@ public abstract class DocumentImpl implements Document {
 	}
 	
 	private void lancerVerificateurFinReservation() {
-		verificateurFinReservation = new RunnableStoppable() {
-
-			private boolean stopped = false;
-			
-			public void run() {
-				while(!stopped && System.currentTimeMillis() - tsReservationMs < TEMPS_MAX_RESERV);
-				if(!stopped) {
-					try {
-						wait(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					System.out.println("fin réservation");
-					verificateurFinReservation = null;
-					stopperReservation();
-				}
-			}
-			
-			synchronized public void stopper() {
-				System.out.println("Stop");
-				stopped = true;
-			}
-		};
-		Thread t = new Thread(verificateurFinReservation); 
-	    t.start();
+		verificateur = new VerificateurFinReservation(TEMPS_MAX_RESERV, tsReservationMs);
+		verificateur.gagnerAdepte(this);
+		new Thread(verificateur).start();
+	}
+	
+	public void quandUnSignalSeDévoile(Augure augure, String message) {
+		if(augure instanceof VerificateurFinReservation && message.startsWith("FIN_RESERVATION")) {
+			verificateur = null;
+			stopperReservation();
+			envoyerSignal("FIN_RESERVATION");
+		}
 	}
 	
 	private void stopperReservation() {
-		if(verificateurFinReservation != null) {
-			verificateurFinReservation.stopper();
-			verificateurFinReservation = null;
+		if(verificateur != null) {
+			verificateur.stopper();
+			verificateur = null;
 		}
 		reserve = null;
 	}
@@ -126,6 +115,7 @@ public abstract class DocumentImpl implements Document {
 			throw new EmpruntException(message);
 		}
 		
+		envoyerSignal("EMPRUNTE");
 		stopperReservation();
 		this.enMediatheque = false;
 	}

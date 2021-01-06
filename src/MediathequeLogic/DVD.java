@@ -33,4 +33,9 @@ public class DVD extends DocumentImpl {
 			throw e;
 		}
 	}
+
+	@Override
+	public String nomAmérindien() {
+		return "Bol Plat Brillant";
+	}
 }
