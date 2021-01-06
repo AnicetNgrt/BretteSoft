@@ -13,7 +13,7 @@ public abstract class MediathequeService extends Service {
 	
 	public MediathequeService(Socket socket, boolean secured) {
 		super(socket);
-		secured = false;
+		this.secured = secured;
 	}
 	
 	protected MediathequeParseResult parseMessage(String message) throws MediathequeCommandParsingException {
@@ -26,7 +26,6 @@ public abstract class MediathequeService extends Service {
 		if(secured) {
 			int idAbonne = -1;
 			try {
-				log(parts[0]);
 				idAbonne = Integer.parseInt(parts[0]);
 			} catch(NumberFormatException e) {
 				throw new MediathequeCommandParsingException("ERREUR: Le numéro d'abonné n'est pas valide.");
@@ -39,8 +38,7 @@ public abstract class MediathequeService extends Service {
 		
 		int idDoc = -1;
 		try {
-			log(parts[1]);
-			idDoc = Integer.parseInt(parts[1]);
+			idDoc = Integer.parseInt(parts[parts.length-1]);
 		} catch(NumberFormatException e) {
 			throw new MediathequeCommandParsingException("ERREUR: Le numéro de document n'est pas valide.");
 		}

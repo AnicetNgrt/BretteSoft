@@ -2,6 +2,7 @@ package MediathequeLogic;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.Period;
 
 public class Abonne {
 	private static int cpt = 0;
@@ -20,7 +21,7 @@ public class Abonne {
 	}
 	
 	public boolean estAdulte() {
-		Duration duration = Duration.between(dateDeNaissance, LocalDate.now());
-		return duration.toDays() >= 365.25 * 16;
+		Period period = Period.between(dateDeNaissance, LocalDate.now());
+		return period.getYears() >= 18;
 	}
 }

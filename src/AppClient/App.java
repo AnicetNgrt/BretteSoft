@@ -6,6 +6,10 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+
 public class App {
 	
 	public static final int MODE_RESERVATION = 0;
@@ -13,6 +17,8 @@ public class App {
 	public static final int MODE_RETOUR = 2;
 	
 	public static void main(String[] args) {
+		playSound("Beethoven - Symphony No. 9 in D minor, Op. 125 - IV. Presto - Allegro (30s excerpt).ogg");
+		
 		Scanner scanner = new Scanner(System.in);
 		String hostname = "localhost";
 		String line = "stop";
@@ -26,6 +32,7 @@ public class App {
 			System.out.println("	2. Retour");
 			
 			int mode = -1;
+			
 			do {
 				System.out.print(">>>");
 				mode = Integer.parseInt(scanner.nextLine());
@@ -66,6 +73,24 @@ public class App {
 	            System.out.println("I/O error: " + ex.getMessage());
 	        }
 		} while(!line.startsWith("stop"));
+	}
+	
+	public static synchronized void playSound(final String url) {
+		new Thread(new Runnable() {
+		// The wrapper thread is unnecessary, unless it blocks on the
+		// Clip finishing; see comments.
+		public void run() {
+			try {
+				Clip clip = AudioSystem.getClip();
+				AudioInputStream inputStream = AudioSystem.getAudioInputStream(
+				App.class.getResourceAsStream(url));
+				clip.open(inputStream);
+				clip.start(); 
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+			}
+		}
+		}).start();
 	}
 
 }

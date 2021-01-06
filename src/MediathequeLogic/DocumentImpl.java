@@ -1,16 +1,19 @@
 package MediathequeLogic;
+
+import ThreadUtils.RunnableStoppable;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 public abstract class DocumentImpl implements Document {
 	
-	public static final long TEMPS_MAX_RESERV = 3600 * 2 * 1000; 
+	public static final long TEMPS_MAX_RESERV = 35 * 1000; //3600 * 2 * 1000; 
+	public static final long TEMPS_RESERV_FAIBLE = 30 * 1000; 
 	private static int numeroMin = 0;
 	
 	private int numero;
 	private String titre;
 	private long tsReservationMs;
 	private Abonne reserve;
+	private RunnableStoppable verificateurFinReservation = null;
 	private boolean enMediatheque;
 	
 	public DocumentImpl(String titre) {
@@ -30,7 +33,11 @@ public abstract class DocumentImpl implements Document {
 		if(!estDisponible()) {
 			String message = "Document indispible";
 			if(this.reserve != null) {
-				message = "Document reservé jusqu'à "+heureFinReservation()+".";
+				if(tempsRestantReservMs() < TEMPS_RESERV_FAIBLE) {
+					message = "30s";
+				} else {
+					message = "Document reservé jusqu'à "+heureFinReservation()+".";
+				}
 			} else if(!this.enMediatheque) {
 				message = "Document déjà emprunté.";
 			}
@@ -40,13 +47,43 @@ public abstract class DocumentImpl implements Document {
 		this.tsReservationMs = System.currentTimeMillis();
 		this.reserve = ab;
 		
-		Thread t = new Thread() {
+		lancerVerificateurFinReservation();
+	}
+	
+	private void lancerVerificateurFinReservation() {
+		verificateurFinReservation = new RunnableStoppable() {
+
+			private boolean stopped = false;
+			
 			public void run() {
-				while(System.currentTimeMillis() - tsReservationMs < TEMPS_MAX_RESERV);
-				reserve = null;
+				while(!stopped && System.currentTimeMillis() - tsReservationMs < TEMPS_MAX_RESERV);
+				if(!stopped) {
+					try {
+						wait(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					System.out.println("fin réservation");
+					verificateurFinReservation = null;
+					stopperReservation();
+				}
 			}
-	    };
+			
+			synchronized public void stopper() {
+				System.out.println("Stop");
+				stopped = true;
+			}
+		};
+		Thread t = new Thread(verificateurFinReservation); 
 	    t.start();
+	}
+	
+	private void stopperReservation() {
+		if(verificateurFinReservation != null) {
+			verificateurFinReservation.stopper();
+			verificateurFinReservation = null;
+		}
+		reserve = null;
 	}
 	
 	private long tempsRestantReservMs() {
@@ -78,19 +115,18 @@ public abstract class DocumentImpl implements Document {
 	@Override
 	public synchronized void empruntPar(Abonne ab) throws EmpruntException {
 		if(!estDisponible()) {
-			String message = "Document indisponible";
 			if(this.reserve != ab) {
-				message = "Document reservé jusqu'à "+heureFinReservation()+".";
+				throw new EmpruntException("Ce document est déjà réservé par quelqu'un d'autre.");
 			} else if(!this.enMediatheque) {
-				message = "Document déjà emprunté.";
+				throw new EmpruntException("Ce document n'est pas disponible pour le moment.");
 			}
-			throw new EmpruntException(message);
 		} else if(this.reserve == null) {
-			String message = "Vous n'avez pas encore reservé ce document, mais il semble disponible.";
+			String message = "Vous n'avez pas encore reservé ce document, mais il est";
+			message += " encore disponible à la réservation.";
 			throw new EmpruntException(message);
 		}
 		
-		this.reserve = null;
+		stopperReservation();
 		this.enMediatheque = false;
 	}
 	
