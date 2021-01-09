@@ -9,10 +9,10 @@ import MediathequeLogic.Document;
 import MediathequeLogic.MediathequeSharedDB;
 import MediathequeLogic.ReservationException;
 import Serveur.Service;
-import SignauxFuméeApaches.Augure;
-import SignauxFuméeApaches.Chaman;
+import SignauxFuméeApaches.Observable;
+import SignauxFuméeApaches.Observer;
 
-public class ServiceReservation extends MediathequeService implements Chaman {
+public class ServiceReservation extends MediathequeService implements Observer {
 	
 	public static final boolean IS_SECURED = true;
 	
@@ -37,41 +37,6 @@ public class ServiceReservation extends MediathequeService implements Chaman {
 	}
 
 	@Override
-	public void onMessage(String message) throws IOException {
-		Abonne abonne;
-		Document document;
-		try {
-			MediathequeParseResult result = parseMessage(message);
-			abonne = result.abonne();
-			document = result.document();
-		} catch (MediathequeCommandParsingException e) {
-			String errorMessage = e.getMessage();
-			sendMessageToClient(errorMessage);
-			return;
-		}
-		
-		essayerReservation(document, abonne);
-	}
-	
-	private void essayerReservation(Document document, Abonne abonne) throws IOException {
-		try {
-			document.reservationPour(abonne);
-			sendMessageToClient("Vous avez bien réservé le document "+document.toString()+".");
-			log("Document \""+document.toString()+"\" reservé par l'abonné n°"+abonne.numero()+".");
-		} catch (ReservationException e) {
-			if(e.getMessage().startsWith("30s") && document instanceof Augure) {
-				((Augure)document).gagnerAdepte(this);
-				abonneReserverBientot = abonne;
-			}
-			if(!(document instanceof Augure)) {
-				sendMessageToClient("Ce document est réservé, mais pour pas très longtemps.");
-			} else {
-				sendMessageToClient(e.getMessage());
-			}
-		}
-	}
-
-	@Override
 	public String getNom() {
 		return "Service Reservation #"+numero;
 	}
@@ -87,24 +52,43 @@ public class ServiceReservation extends MediathequeService implements Chaman {
 	}
 
 	@Override
-	public void quandUnSignalSeDévoile(Augure augure, String message) {
-		if(augure instanceof Document) {
-			Document document = (Document) augure;
+	public void onSignal(Observable origin, String message) {
+		if(origin instanceof Document) {
+			Document document = (Document) origin;
 			if(message.startsWith("FIN_RESERVATION")) {
 				try {
-					augure.perdreAdepte(this);
-					essayerReservation(document, abonneReserverBientot);
+					origin.unsubscribe(this);
+					handleRequest(document, abonneReserverBientot);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 				abonneReserverBientot = null;
 			} else if(message.startsWith("EMPRUNTE")) {
 				try {
-					augure.perdreAdepte(this);
+					origin.unsubscribe(this);
 					sendMessageToClient("Le document "+document.toString()+" vient tout juste d'être emprunté ! Dommage...");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+			}
+		}
+	}
+
+	@Override
+	public void handleRequest(Document document, Abonne abonne) throws IOException {
+		try {
+			document.reservationPour(abonne);
+			sendMessageToClient("Vous avez bien réservé le document "+document.toString()+".");
+			log("Document \""+document.toString()+"\" reservé par l'abonné n°"+abonne.numero()+".");
+		} catch (ReservationException e) {
+			if(e.getMessage().startsWith("30s") && document instanceof Observable) {
+				((Observable)document).subscribe(this);
+				abonneReserverBientot = abonne;
+			}
+			if(!(document instanceof Observable)) {
+				sendMessageToClient("Ce document est réservé, mais pour pas très longtemps.");
+			} else {
+				sendMessageToClient(e.getMessage());
 			}
 		}
 	}

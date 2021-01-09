@@ -1,5 +1,6 @@
 package Services;
 
+import java.io.IOException;
 import java.net.Socket;
 
 import MediathequeLogic.Abonne;
@@ -49,4 +50,16 @@ public abstract class MediathequeService extends Service {
 		
 		return new MediathequeParseResult(abonne, document);
 	}
+	
+	public void onMessage(String message) throws IOException {
+		try {
+			MediathequeParseResult result = parseMessage(message);
+			handleRequest(result.document(), result.abonne());
+		} catch (MediathequeCommandParsingException e) {
+			sendMessageToClient(e.getMessage());
+			return;
+		}
+	}
+	
+	public abstract void handleRequest(Document document, Abonne abonne) throws IOException;
 }

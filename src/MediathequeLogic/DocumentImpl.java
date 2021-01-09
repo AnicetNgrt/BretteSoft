@@ -2,10 +2,10 @@ package MediathequeLogic;
 
 import java.time.LocalDateTime;
 
-import SignauxFuméeApaches.Augure;
-import SignauxFuméeApaches.Chaman;
+import SignauxFuméeApaches.Observable;
+import SignauxFuméeApaches.Observer;
 
-public abstract class DocumentImpl extends Augure implements Document, Chaman {
+public abstract class DocumentImpl extends Observable implements Document, Observer {
 	
 	public static final long TEMPS_MAX_RESERV = 35 * 1000; //3600 * 2 * 1000; 
 	public static final long TEMPS_RESERV_FAIBLE = 30 * 1000; 
@@ -55,15 +55,16 @@ public abstract class DocumentImpl extends Augure implements Document, Chaman {
 	
 	private void lancerVerificateurFinReservation() {
 		verificateur = new VerificateurFinReservation(TEMPS_MAX_RESERV, tsReservationMs);
-		verificateur.gagnerAdepte(this);
+		verificateur.subscribe(this);
 		new Thread(verificateur).start();
 	}
 	
-	public void quandUnSignalSeDévoile(Augure augure, String message) {
-		if(augure instanceof VerificateurFinReservation && message.startsWith("FIN_RESERVATION")) {
+	@Override
+	public void onSignal(Observable origin, String message) {
+		if(origin instanceof VerificateurFinReservation && message.startsWith("FIN_RESERVATION")) {
 			verificateur = null;
 			stopperReservation();
-			envoyerSignal("FIN_RESERVATION");
+			sendSignal("FIN_RESERVATION");
 		}
 	}
 	
@@ -107,7 +108,7 @@ public abstract class DocumentImpl extends Augure implements Document, Chaman {
 			if(this.reserve != ab) {
 				throw new EmpruntException("Ce document est déjà réservé par quelqu'un d'autre.");
 			} else if(!this.enMediatheque) {
-				throw new EmpruntException("Ce document n'est pas disponible pour le moment.");
+				throw new EmpruntException("Ce document n'est pas disponible pour le moment. Renvoyez \"\"");
 			}
 		} else if(this.reserve == null) {
 			String message = "Vous n'avez pas encore reservé ce document, mais il est";
@@ -115,7 +116,7 @@ public abstract class DocumentImpl extends Augure implements Document, Chaman {
 			throw new EmpruntException(message);
 		}
 		
-		envoyerSignal("EMPRUNTE");
+		sendSignal("EMPRUNTE");
 		stopperReservation();
 		this.enMediatheque = false;
 	}

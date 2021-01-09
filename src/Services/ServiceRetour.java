@@ -3,6 +3,7 @@ package Services;
 import java.io.IOException;
 import java.net.Socket;
 
+import MediathequeLogic.Abonne;
 import MediathequeLogic.Document;
 import Serveur.Service;
 
@@ -26,22 +27,6 @@ public class ServiceRetour extends MediathequeService {
 	}
 
 	@Override
-	public void onMessage(String message) throws IOException  {
-		Document document;
-		try {
-			MediathequeParseResult result = parseMessage(message);
-			document = result.document();
-		} catch (MediathequeCommandParsingException e) {
-			sendMessageToClient(e.getMessage());
-			return;
-		}
-		
-		document.retour();
-		sendMessageToClient("Document "+document.toString()+" retourné avec succès.");
-		log("Document \""+document.toString()+"\" rendu.");
-	}
-
-	@Override
 	public String getNom() {
 		return "Service Retour #"+numero;
 	}
@@ -49,6 +34,13 @@ public class ServiceRetour extends MediathequeService {
 	@Override
 	public Service getInstanceDuMemeService(Socket socket) {
 		return new ServiceRetour(socket);
+	}
+
+	@Override
+	public void handleRequest(Document document, Abonne abonne) throws IOException {
+		document.retour();
+		sendMessageToClient("Document "+document.toString()+" retourné avec succès.");
+		log("Document \""+document.toString()+"\" rendu.");
 	}
 
 }

@@ -29,28 +29,6 @@ public class ServiceEmprunt extends MediathequeService {
 	}
 
 	@Override
-	public void onMessage(String message) throws IOException {
-		Abonne abonne;
-		Document document;
-		try {
-			MediathequeParseResult result = parseMessage(message);
-			abonne = result.abonne();
-			document = result.document();
-		} catch (MediathequeCommandParsingException e) {
-			sendMessageToClient(e.getMessage());
-			return;
-		}
-		
-		try {
-			document.empruntPar(abonne);
-			sendMessageToClient("Vous avez bien emprunté le document "+document.toString()+".");
-			log("Document \""+document.toString()+"\" emprunté par l'abonné n°"+abonne.numero()+".");
-		} catch (EmpruntException e) {
-			sendMessageToClient(e.getMessage());
-		}
-	}
-
-	@Override
 	public String getNom() {
 		return "Service Emprunt #"+numero;
 	}
@@ -58,5 +36,16 @@ public class ServiceEmprunt extends MediathequeService {
 	@Override
 	public Service getInstanceDuMemeService(Socket socket) {
 		return new ServiceEmprunt(socket);
+	}
+
+	@Override
+	public void handleRequest(Document document, Abonne abonne) throws IOException {
+		try {
+			document.empruntPar(abonne);
+			sendMessageToClient("Vous avez bien emprunté le document "+document.toString()+".");
+			log("Document \""+document.toString()+"\" emprunté par l'abonné n°"+abonne.numero()+".");
+		} catch (EmpruntException e) {
+			sendMessageToClient(e.getMessage());
+		}
 	}
 }

@@ -1,8 +1,8 @@
 package MediathequeLogic;
 
-import SignauxFuméeApaches.Augure;
+import SignauxFuméeApaches.Observable;
 
-public class VerificateurFinReservation extends Augure implements Runnable {
+public class VerificateurFinReservation extends Observable implements Runnable {
 	private boolean stopped = false;
 	
 	private final long tempsMaxReservMs;
@@ -17,7 +17,7 @@ public class VerificateurFinReservation extends Augure implements Runnable {
 		while(!stopped && System.currentTimeMillis() - tsReservationMs < tempsMaxReservMs);
 		if(!stopped) {
 			loopWait();
-			envoyerSignal("FIN_RESERVATION");
+			sendSignal("FIN_RESERVATION");
 		}
 	}
 	
