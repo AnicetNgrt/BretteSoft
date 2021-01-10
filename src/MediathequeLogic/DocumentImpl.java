@@ -59,7 +59,6 @@ public abstract class DocumentImpl extends Observable implements Document, Obser
 		new Thread(verificateur).start();
 	}
 	
-	@Override
 	public void onSignal(Observable origin, String message) {
 		if(origin instanceof VerificateurFinReservation && message.startsWith("FIN_RESERVATION")) {
 			verificateur = null;

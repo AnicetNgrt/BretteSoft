@@ -28,13 +28,18 @@ public class App {
 	public static boolean stopConnexion = false;
 	public static boolean stopProgramme = false;
 	
-	public static Clip audioPlayer;
+	public static Clip audioPlayer = null;
 	
 
 	public static void main(String[] args) {
 		scanner = new Scanner(System.in);
 		
 		System.out.println("Client médiathèque bienvenue.\n");
+		System.out.println("Instructions d'utilisation :");
+		System.out.println("	1 -> choisir le service en écrivant '0', '1' ou '2'");
+		System.out.println("	2 -> suivre les instructions du service");
+		System.out.println("	3 -> revenir au menu en écrivant 'menu'");
+		System.out.println("	4 -> quitter le programme en écrivant 'stop'\n");
 		
 		do {
 			menuSelectionService();
@@ -44,7 +49,7 @@ public class App {
 	}
 	
 	public static void menuSelectionService() {
-		System.out.println("Veuillez sélectionner un mode: ");
+		System.out.println("Veuillez sélectionner un mode : ");
 		System.out.println("	0. Réservation");
 		System.out.println("	1. Emprunt");
 		System.out.println("	2. Retour");
@@ -155,6 +160,7 @@ public class App {
 	}
 	
 	public static synchronized void arrêterMusique() {
+		if(audioPlayer == null) return;
 		audioPlayer.stop();
 	}
 
